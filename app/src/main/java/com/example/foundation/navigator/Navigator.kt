@@ -1,6 +1,6 @@
-package com.example.simplemvvm.views
+package com.example.foundation.navigator
 
-import com.example.simplemvvm.views.base.BaseScreen
+import com.example.foundation.views.BaseScreen
 
 interface Navigator {
 

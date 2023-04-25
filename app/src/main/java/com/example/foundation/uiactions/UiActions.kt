@@ -1,4 +1,4 @@
-package com.example.simplemvvm.views
+package com.example.foundation.uiactions
 
 import androidx.annotation.StringRes
 

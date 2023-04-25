@@ -8,10 +8,10 @@ import android.view.ViewTreeObserver
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.simplemvvm.R
 import com.example.simplemvvm.databinding.FragmentChangeColorBinding
-import com.example.simplemvvm.views.HasCustomTitle
-import com.example.simplemvvm.views.base.BaseFragment
-import com.example.simplemvvm.views.base.BaseScreen
-import com.example.simplemvvm.views.base.screenViewModel
+import com.example.foundation.views.HasCustomTitle
+import com.example.foundation.views.BaseFragment
+import com.example.foundation.views.BaseScreen
+import com.example.foundation.views.screenViewModel
 
 class ChangeColorFragment : BaseFragment(), HasCustomTitle {
 
@@ -46,17 +46,19 @@ class ChangeColorFragment : BaseFragment(), HasCustomTitle {
         binding.cancelButton.setOnClickListener { viewModel.onCancelPressed() }
         binding.saveButton.setOnClickListener { viewModel.onSavePressed() }
 
-        return  binding.root
+        return binding.root
     }
 
     private fun setupLayoutManager() {
-        binding.colorsRecyclerView.viewTreeObserver.addOnGlobalLayoutListener (object : ViewTreeObserver.OnGlobalLayoutListener {
+        binding.colorsRecyclerView.viewTreeObserver.addOnGlobalLayoutListener(object :
+            ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 binding.colorsRecyclerView.viewTreeObserver.removeOnGlobalLayoutListener(this)
                 val width = binding.colorsRecyclerView.width
                 val itemWidth = resources.getDimensionPixelSize(R.dimen.item_width)
                 val columns = width / itemWidth
-                binding.colorsRecyclerView.layoutManager = GridLayoutManager(requireContext(), columns)
+                binding.colorsRecyclerView.layoutManager =
+                    GridLayoutManager(requireContext(), columns)
             }
         })
     }

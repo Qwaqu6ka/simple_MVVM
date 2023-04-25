@@ -7,10 +7,10 @@ import androidx.lifecycle.SavedStateHandle
 import com.example.simplemvvm.R
 import com.example.simplemvvm.model.colors.ColorsRepository
 import com.example.simplemvvm.model.colors.NamedColor
-import com.example.simplemvvm.views.Navigator
-import com.example.simplemvvm.views.UiActions
+import com.example.foundation.navigator.Navigator
+import com.example.foundation.uiactions.UiActions
+import com.example.foundation.views.BaseViewModel
 import com.example.simplemvvm.views.changecolor.ChangeColorFragment.Screen
-import com.example.simplemvvm.views.base.BaseViewModel
 
 const val KEY_CURRENT_COLOR_ID = "current_color_id"
 class ChangeColorViewModel(

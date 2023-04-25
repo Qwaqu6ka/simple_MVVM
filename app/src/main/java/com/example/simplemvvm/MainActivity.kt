@@ -1,51 +1,60 @@
 package com.example.simplemvvm
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
-import androidx.activity.viewModels
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
+import androidx.appcompat.app.AppCompatActivity
+import com.example.foundation.ActivityScopeViewModel
+import com.example.foundation.navigator.IntermediateNavigator
+import com.example.foundation.navigator.StackFragmentNavigator
+import com.example.foundation.uiactions.AndroidUiActions
+import com.example.foundation.utils.viewModelCreator
+import com.example.foundation.views.FragmentHolder
 import com.example.simplemvvm.databinding.ActivityMainBinding
-import com.example.simplemvvm.views.HasCustomTitle
-import com.example.simplemvvm.views.base.BaseFragment
 import com.example.simplemvvm.views.currentcolor.CurrentColorFragment
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), FragmentHolder {
+
+    private lateinit var navigator: StackFragmentNavigator
 
     private lateinit var binding: ActivityMainBinding
-    private val activityViewModel by viewModels<MainViewModel> { AndroidViewModelFactory(application) }
+    private val activityViewModel by viewModelCreator<ActivityScopeViewModel> {
+        ActivityScopeViewModel(
+            uiActions = AndroidUiActions(applicationContext),
+            navigator = IntermediateNavigator()
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if (savedInstanceState == null) {
-            activityViewModel.launchFragment(
-                activity = this,
-                screen = CurrentColorFragment.Screen(),
-                addToBackStack = false
+        navigator = StackFragmentNavigator(
+            activity = this,
+            defaultToolbarTitleRes = R.string.app_name,
+            fragmentContainerId = R.id.fragmentContainer,
+            animations = StackFragmentNavigator.Animations(
+                enter = R.anim.enter,
+                exit = R.anim.exit,
+                popEnter = R.anim.pop_enter,
+                popExit = R.anim.pop_exit
             )
-        }
-        supportFragmentManager.registerFragmentLifecycleCallbacks(fragmentCallbacks, false)
+        ) { CurrentColorFragment.Screen() }
+        navigator.onCreate(savedInstanceState)
     }
 
     override fun onDestroy() {
-        supportFragmentManager.unregisterFragmentLifecycleCallbacks(fragmentCallbacks)
+        navigator.onDestroy()
         super.onDestroy()
     }
 
     override fun onResume() {
         super.onResume()
-        activityViewModel.whenActivityActive.resource = this
+        activityViewModel.navigator.setTarget(navigator)
     }
 
     override fun onPause() {
         super.onPause()
-        activityViewModel.whenActivityActive.resource = null
+        activityViewModel.navigator.setTarget(null)
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -53,30 +62,9 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    fun notifyScreenUpdates() {
-        val f = supportFragmentManager.findFragmentById(binding.fragmentContainer.id)
-
-        if (supportFragmentManager.backStackEntryCount > 0) {
-            supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        } else {
-            supportActionBar?.setDisplayHomeAsUpEnabled(false)
-        }
-
-        if (f is HasCustomTitle && f.getCustomTitle() != null) {
-            supportActionBar?.title = f.getCustomTitle()
-        } else {
-            supportActionBar?.title = getString(R.string.app_name)
-        }
-
-        val result = activityViewModel.result.value?.getValue() ?: return
-        if (f is BaseFragment) {
-            f.viewModel.onResult(result)
-        }
+    override fun notifyScreenUpdates() {
+        navigator.notifyScreenUpdates()
     }
 
-    private val fragmentCallbacks = object : FragmentLifecycleCallbacks() {
-        override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, savedInstanceState: Bundle?) {
-            notifyScreenUpdates()
-        }
-    }
+    override fun getActivityScopeViewModel(): ActivityScopeViewModel = activityViewModel
 }

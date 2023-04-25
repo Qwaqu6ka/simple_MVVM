@@ -1,4 +1,4 @@
-package com.example.simplemvvm.utils
+package com.example.foundation.utils
 
 class Event<T> (
     private val value: T
