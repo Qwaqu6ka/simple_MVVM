@@ -1,6 +1,7 @@
 package com.example.simplemvvm
 
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.example.foundation.ActivityScopeViewModel
 import com.example.foundation.navigator.IntermediateNavigator
@@ -27,6 +28,7 @@ class MainActivity : AppCompatActivity(), FragmentHolder {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
 
         navigator = StackFragmentNavigator(
             activity = this,
@@ -67,4 +69,10 @@ class MainActivity : AppCompatActivity(), FragmentHolder {
     }
 
     override fun getActivityScopeViewModel(): ActivityScopeViewModel = activityViewModel
+
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            navigator.onBackPressed()
+        }
+    }
 }

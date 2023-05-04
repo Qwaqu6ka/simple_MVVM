@@ -12,6 +12,8 @@ import com.example.foundation.views.HasCustomTitle
 import com.example.foundation.views.BaseFragment
 import com.example.foundation.views.BaseScreen
 import com.example.foundation.views.screenViewModel
+import com.example.simplemvvm.views.onTryAgain
+import com.example.simplemvvm.views.renderSimpleResult
 
 class ChangeColorFragment : BaseFragment(), HasCustomTitle {
 
@@ -35,8 +37,16 @@ class ChangeColorFragment : BaseFragment(), HasCustomTitle {
         binding.colorsRecyclerView.adapter = adapter
         setupLayoutManager()
 
-        viewModel.colorsList.observe(viewLifecycleOwner) {
-            adapter.items = it
+        viewModel.viewState.observe(viewLifecycleOwner) { result ->
+            renderSimpleResult(binding.root, result) { viewState ->
+                adapter.items = viewState.colorsList
+                binding.saveButton.visibility =
+                    if (viewState.showSaveButton) View.VISIBLE else View.INVISIBLE
+                binding.cancelButton.visibility =
+                    if (viewState.showCancelButton) View.VISIBLE else View.INVISIBLE
+                binding.saveProgressBar.visibility =
+                    if (viewState.showSaveProgressBar) View.VISIBLE else View.GONE
+            }
         }
 
         viewModel.screenTitle.observe(viewLifecycleOwner) {
@@ -45,16 +55,19 @@ class ChangeColorFragment : BaseFragment(), HasCustomTitle {
 
         binding.cancelButton.setOnClickListener { viewModel.onCancelPressed() }
         binding.saveButton.setOnClickListener { viewModel.onSavePressed() }
+        onTryAgain(binding.root) {
+            viewModel.onTryAgain()
+        }
 
         return binding.root
     }
 
     private fun setupLayoutManager() {
-        binding.colorsRecyclerView.viewTreeObserver.addOnGlobalLayoutListener(object :
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener(object :
             ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
-                binding.colorsRecyclerView.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                val width = binding.colorsRecyclerView.width
+                binding.root.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                val width = binding.root.width
                 val itemWidth = resources.getDimensionPixelSize(R.dimen.item_width)
                 val columns = width / itemWidth
                 binding.colorsRecyclerView.layoutManager =

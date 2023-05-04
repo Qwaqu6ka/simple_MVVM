@@ -1,28 +1,47 @@
 package com.example.simplemvvm.model.colors
 
 import android.graphics.Color
+import com.example.foundation.models.coroutines.IoDispatcher
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
-class InMemoryColorsRepository : ColorsRepository {
+class InMemoryColorsRepository(
+    private val ioDispatcher: IoDispatcher
+) : ColorsRepository {
 
-    override var currentColor: NamedColor = AVAILABLE_COLORS[0]
-        set(value) {
-            field = value
-            listeners.forEach { it(value) }
-        }
+    private var currentColor: NamedColor = AVAILABLE_COLORS[0]
 
     private var listeners = mutableSetOf<ColorListener>()
 
-    override fun getAvailableColors(): List<NamedColor> = AVAILABLE_COLORS
-
-    override fun getById(id: Long): NamedColor = AVAILABLE_COLORS.first { it.id == id }
-
     override fun addListener(listener: ColorListener) {
         listeners += listener
-        listener(currentColor)
     }
 
     override fun removeListener(listener: ColorListener) {
         listeners -= listener
+    }
+
+    override suspend fun getAvailableColors(): List<NamedColor> = withContext(ioDispatcher.value) {
+        delay(1000)
+        return@withContext AVAILABLE_COLORS
+    }
+
+    override suspend fun getById(id: Long): NamedColor = withContext(ioDispatcher.value) {
+        delay(1000)
+        return@withContext AVAILABLE_COLORS.first { it.id == id }
+    }
+
+    override suspend fun getCurrentColor(): NamedColor = withContext(ioDispatcher.value) {
+        delay(1000)
+        return@withContext currentColor
+    }
+
+    override suspend fun setCurrentColor(color: NamedColor) = withContext(ioDispatcher.value) {
+        delay(1000)
+        if (currentColor != color) {
+            currentColor = color
+            listeners.forEach { it(color) }
+        }
     }
 
     companion object {

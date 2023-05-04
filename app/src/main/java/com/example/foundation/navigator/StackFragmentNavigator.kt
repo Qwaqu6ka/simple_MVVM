@@ -50,8 +50,16 @@ class StackFragmentNavigator(
         activity.supportFragmentManager.unregisterFragmentLifecycleCallbacks(fragmentCallbacks)
     }
 
+    fun onBackPressed() {
+        val f = getCurrentFragment()
+        if (f is BaseFragment) {
+            f.viewModel.onBackPressed()
+        }
+        closeScreen()
+    }
+
     fun notifyScreenUpdates() {
-        val f = activity.supportFragmentManager.findFragmentById(fragmentContainerId)
+        val f = getCurrentFragment()
 
         if (activity.supportFragmentManager.backStackEntryCount > 0) {
             activity.supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -84,6 +92,14 @@ class StackFragmentNavigator(
             .commit()
     }
 
+    private fun closeScreen() = with(activity.supportFragmentManager) {
+        if (backStackEntryCount > 0)
+            activity.supportFragmentManager.popBackStack()
+        else
+            activity.finish()
+    }
+
+
     private fun publishResults(fragment: Fragment) {
         val result = result?.getValue() ?: return
         if (fragment is BaseFragment) {
@@ -92,11 +108,19 @@ class StackFragmentNavigator(
     }
 
     private val fragmentCallbacks = object : FragmentManager.FragmentLifecycleCallbacks() {
-        override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, savedInstanceState: Bundle?) {
+        override fun onFragmentViewCreated(
+            fm: FragmentManager,
+            f: Fragment,
+            v: View,
+            savedInstanceState: Bundle?
+        ) {
             notifyScreenUpdates()
             publishResults(f)
         }
     }
+
+    private fun getCurrentFragment(): Fragment? =
+        activity.supportFragmentManager.findFragmentById(fragmentContainerId)
 
     class Animations(
         @AnimRes val enter: Int,

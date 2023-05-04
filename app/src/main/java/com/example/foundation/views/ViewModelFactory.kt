@@ -13,6 +13,7 @@ import java.lang.reflect.Constructor
 
 inline fun <reified VM : ViewModel> BaseFragment.screenViewModel() = viewModels<VM> {
     val application = requireActivity().application as BaseApplication
+
     val screen = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         requireArguments().getSerializable(ARG_SCREEN, BaseScreen::class.java)
     } else {
@@ -25,7 +26,7 @@ inline fun <reified VM : ViewModel> BaseFragment.screenViewModel() = viewModels<
     // - singleton scope dependencies (repositories) -> from App class
     // - activity VM scope dependencies -> from MainViewModel
     // - screen VM scope dependencies -> screen args
-    val dependencies = listOf(screen, activityScopeViewModel) + application.repositories
+    val dependencies = listOf(screen, activityScopeViewModel) + application.singletonScopeDependencies
 
     ViewModelFactory(dependencies, this)
 }
