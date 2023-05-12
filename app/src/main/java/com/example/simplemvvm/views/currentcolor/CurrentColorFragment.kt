@@ -14,7 +14,6 @@ import com.example.simplemvvm.views.renderSimpleResult
 class CurrentColorFragment : BaseFragment() {
 
     // no arguments for this screen
-
     class Screen : BaseScreen
 
     override val viewModel by screenViewModel<CurrentColorViewModel>()

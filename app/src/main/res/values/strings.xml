@@ -21,4 +21,7 @@
     <string name="try_again">Try Again</string>
     <string name="error_please_try_again_later">Error! Please try again later</string>
     <string name="cant_save_color">Can\'t save color</string>
+
+    <string name="percentage_value">%1$d%%</string>
+    <string name="please_wait">Please wait…</string>
 </resources>

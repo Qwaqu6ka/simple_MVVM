@@ -8,10 +8,10 @@ import com.example.foundation.views.BaseViewModel
 import com.example.foundation.views.LiveResult
 import com.example.foundation.views.MutableLiveResult
 import com.example.simplemvvm.R
-import com.example.simplemvvm.model.colors.ColorListener
 import com.example.simplemvvm.model.colors.ColorsRepository
 import com.example.simplemvvm.model.colors.NamedColor
 import com.example.simplemvvm.views.changecolor.ChangeColorFragment
+import kotlinx.coroutines.launch
 
 class CurrentColorViewModel(
     private val navigator: Navigator,
@@ -22,18 +22,13 @@ class CurrentColorViewModel(
     private val _currentColor = MutableLiveResult<NamedColor>(PendingResult())
     val currentColor: LiveResult<NamedColor> = _currentColor
 
-    private val colorsListener: ColorListener = { color ->
-        _currentColor.postValue(SuccessResult(color))
-    }
-
     init {
-        colorsRepository.addListener(colorsListener)
+        viewModelScope.launch {
+            colorsRepository.listenCurrentColor().collect {
+                _currentColor.postValue(SuccessResult(it))
+            }
+        }
         load()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        colorsRepository.removeListener(colorsListener)
     }
 
     override fun onResult(result: Any) {

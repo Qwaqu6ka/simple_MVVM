@@ -1,8 +1,8 @@
 package com.example.simplemvvm.model.colors
 
 import com.example.foundation.models.Repository
+import kotlinx.coroutines.flow.Flow
 
-typealias ColorListener = (NamedColor) -> Unit
 
 interface ColorsRepository : Repository {
     suspend fun getAvailableColors(): List<NamedColor>
@@ -11,9 +11,7 @@ interface ColorsRepository : Repository {
 
     suspend fun getCurrentColor(): NamedColor
 
-    suspend fun setCurrentColor(color: NamedColor)
+    fun setCurrentColor(color: NamedColor): Flow<Int>
 
-    fun addListener(listener: ColorListener)
-
-    fun removeListener(listener: ColorListener)
+    fun listenCurrentColor(): Flow<NamedColor>
 }

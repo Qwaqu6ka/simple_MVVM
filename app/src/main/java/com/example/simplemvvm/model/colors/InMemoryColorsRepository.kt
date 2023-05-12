@@ -2,7 +2,12 @@ package com.example.simplemvvm.model.colors
 
 import android.graphics.Color
 import com.example.foundation.models.coroutines.IoDispatcher
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
 class InMemoryColorsRepository(
@@ -11,15 +16,13 @@ class InMemoryColorsRepository(
 
     private var currentColor: NamedColor = AVAILABLE_COLORS[0]
 
-    private var listeners = mutableSetOf<ColorListener>()
+    private var currentColorFlow = MutableSharedFlow<NamedColor>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
 
-    override fun addListener(listener: ColorListener) {
-        listeners += listener
-    }
-
-    override fun removeListener(listener: ColorListener) {
-        listeners -= listener
-    }
+    override fun listenCurrentColor(): Flow<NamedColor> = currentColorFlow
 
     override suspend fun getAvailableColors(): List<NamedColor> = withContext(ioDispatcher.value) {
         delay(1000)
@@ -36,13 +39,20 @@ class InMemoryColorsRepository(
         return@withContext currentColor
     }
 
-    override suspend fun setCurrentColor(color: NamedColor) = withContext(ioDispatcher.value) {
-        delay(1000)
+    override fun setCurrentColor(color: NamedColor): Flow<Int> = flow {
         if (currentColor != color) {
+            var progress = 0
+            while (progress < 100) {
+                progress += 2
+                delay(30)
+                emit(progress)
+            }
             currentColor = color
-            listeners.forEach { it(color) }
+            currentColorFlow.emit(color)
+        } else {
+            emit(100)
         }
-    }
+    }.flowOn(ioDispatcher.value)
 
     companion object {
         private val AVAILABLE_COLORS = listOf(

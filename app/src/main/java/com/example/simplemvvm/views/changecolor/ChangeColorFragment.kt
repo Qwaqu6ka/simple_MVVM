@@ -6,12 +6,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import androidx.recyclerview.widget.GridLayoutManager
-import com.example.simplemvvm.R
-import com.example.simplemvvm.databinding.FragmentChangeColorBinding
-import com.example.foundation.views.HasCustomTitle
 import com.example.foundation.views.BaseFragment
 import com.example.foundation.views.BaseScreen
+import com.example.foundation.views.HasCustomTitle
 import com.example.foundation.views.screenViewModel
+import com.example.simplemvvm.R
+import com.example.simplemvvm.databinding.FragmentChangeColorBinding
+import com.example.simplemvvm.views.collectFlow
 import com.example.simplemvvm.views.onTryAgain
 import com.example.simplemvvm.views.renderSimpleResult
 
@@ -37,15 +38,18 @@ class ChangeColorFragment : BaseFragment(), HasCustomTitle {
         binding.colorsRecyclerView.adapter = adapter
         setupLayoutManager()
 
-        viewModel.viewState.observe(viewLifecycleOwner) { result ->
+        collectFlow(viewModel.viewState) { result ->
             renderSimpleResult(binding.root, result) { viewState ->
                 adapter.items = viewState.colorsList
                 binding.saveButton.visibility =
                     if (viewState.showSaveButton) View.VISIBLE else View.INVISIBLE
                 binding.cancelButton.visibility =
                     if (viewState.showCancelButton) View.VISIBLE else View.INVISIBLE
-                binding.saveProgressBar.visibility =
+
+                binding.saveProgressGroup.visibility =
                     if (viewState.showSaveProgressBar) View.VISIBLE else View.GONE
+                binding.saveProgressBar.progress = viewState.saveProgressPercentage
+                binding.savingPercentageTextView.text = viewState.saveProgressPercentageMessage
             }
         }
 
