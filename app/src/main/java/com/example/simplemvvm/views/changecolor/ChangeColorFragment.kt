@@ -38,6 +38,9 @@ class ChangeColorFragment : BaseFragment(), HasCustomTitle {
         binding.colorsRecyclerView.adapter = adapter
         setupLayoutManager()
 
+        binding.cancelButton.setOnClickListener { viewModel.onCancelPressed() }
+        binding.saveButton.setOnClickListener { viewModel.onSavePressed() }
+
         collectFlow(viewModel.viewState) { result ->
             renderSimpleResult(binding.root, result) { viewState ->
                 adapter.items = viewState.colorsList
@@ -57,8 +60,6 @@ class ChangeColorFragment : BaseFragment(), HasCustomTitle {
             notifyScreenUpdates()
         }
 
-        binding.cancelButton.setOnClickListener { viewModel.onCancelPressed() }
-        binding.saveButton.setOnClickListener { viewModel.onSavePressed() }
         onTryAgain(binding.root) {
             viewModel.onTryAgain()
         }

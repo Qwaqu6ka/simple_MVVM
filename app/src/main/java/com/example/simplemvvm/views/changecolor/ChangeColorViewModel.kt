@@ -13,6 +13,7 @@ import com.example.foundation.models.getPercentage
 import com.example.foundation.models.isInProgress
 import com.example.foundation.navigator.Navigator
 import com.example.foundation.uiactions.UiActions
+import com.example.foundation.utils.finiteShareIn
 import com.example.foundation.views.BaseViewModel
 import com.example.foundation.views.ResultFlow
 import com.example.foundation.views.ResultMutableStateFlow
@@ -21,9 +22,12 @@ import com.example.simplemvvm.model.colors.ColorsRepository
 import com.example.simplemvvm.model.colors.NamedColor
 import com.example.simplemvvm.views.changecolor.ChangeColorFragment.Screen
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 
 const val KEY_CURRENT_COLOR_ID = "current_color_id"
@@ -40,12 +44,16 @@ class ChangeColorViewModel(
         MutableStateFlow(PendingResult())
     private val _currentColorId =
         savedStateHandle.getMutableStateFlow(KEY_CURRENT_COLOR_ID, screen.currentColorId)
-    private val _saveInProgress = MutableStateFlow<Progress>(EmptyProgress)
+    private val _instantSaveInProgress =
+        MutableStateFlow<Progress>(EmptyProgress)  // for progressBar
+    private val _sampledSaveInProgress =
+        MutableStateFlow<Progress>(EmptyProgress)  // for progressTextView
 
     val viewState: ResultFlow<ViewState> = combine(
         _availableColors,
         _currentColorId,
-        _saveInProgress,
+        _instantSaveInProgress,
+        _sampledSaveInProgress,
         ::mergeSources
     )
 
@@ -68,25 +76,44 @@ class ChangeColorViewModel(
     }
 
     override fun onColorChosen(namedColor: NamedColor) {
-        if (_saveInProgress.value.isInProgress()) return
+        if (_instantSaveInProgress.value.isInProgress()) return
         _currentColorId.value = namedColor.id
     }
 
+    @OptIn(FlowPreview::class)
     fun onSavePressed() = viewModelScope.launch {
         try {
-            _saveInProgress.value = PercentageProgress.START
+            _instantSaveInProgress.value = PercentageProgress.START
+            _sampledSaveInProgress.value = PercentageProgress.START
+
             val currentColorId = _currentColorId.value
             val currentColor = colorsRepository.getById(currentColorId)
 
-            colorsRepository.setCurrentColor(currentColor).collect { percentage ->
-                _saveInProgress.value = PercentageProgress(percentage)
+            val flow = colorsRepository.setCurrentColor(currentColor).finiteShareIn(this)
+
+            val instantJob = async {
+                flow
+                    .collect { percentage ->
+                    _instantSaveInProgress.value = PercentageProgress(percentage)
+                }
             }
+
+            val sampleJob = async {
+                flow.sample(200)
+                    .collect { percentage ->
+                        _sampledSaveInProgress.value = PercentageProgress(percentage)
+                    }
+            }
+
+            instantJob.await()
+            sampleJob.await()
 
             navigator.goBack(currentColor)
         } catch (e: Exception) {
             if (e !is CancellationException) uiActions.toast(uiActions.getString(R.string.cant_save_color))
         } finally {
-            _saveInProgress.value = EmptyProgress
+            _instantSaveInProgress.value = EmptyProgress
+            _sampledSaveInProgress.value = EmptyProgress
         }
     }
 
@@ -101,20 +128,21 @@ class ChangeColorViewModel(
     private fun mergeSources(
         colors: Result<List<NamedColor>>,
         currentColorId: Long,
-        saveInProgress: Progress
+        instantSaveInProgress: Progress,
+        sampledSaveInProgress: Progress
     ): Result<ViewState> {
 
         return colors.map { colorsList ->
             ViewState(
                 colorsList = colorsList.map { NamedColorListItem(it, it.id == currentColorId) },
-                showSaveProgressBar = saveInProgress.isInProgress(),
-                showSaveButton = !saveInProgress.isInProgress(),
-                showCancelButton = !saveInProgress.isInProgress(),
+                showSaveProgressBar = instantSaveInProgress.isInProgress(),
+                showSaveButton = !instantSaveInProgress.isInProgress(),
+                showCancelButton = !instantSaveInProgress.isInProgress(),
 
-                saveProgressPercentage = saveInProgress.getPercentage(),
+                saveProgressPercentage = instantSaveInProgress.getPercentage(),
                 saveProgressPercentageMessage = uiActions.getString(
                     R.string.percentage_value,
-                    saveInProgress.getPercentage()
+                    sampledSaveInProgress.getPercentage()
                 )
             )
         }
